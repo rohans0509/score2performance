@@ -1,0 +1,14 @@
+# Setup
+srun -c 4 --gres=gpu:1 --mem=32GB --qos=nopreemption -p interactive --pty bash
+
+# Python activate
+source sourcefile
+source envs/score2perfenv/bin/activate
+
+# Transfer files
+#Dataset
+scp -r score2performance/Datasets rohan@v.vectorinstitute.ai:/h/rohan/score2performance/Datasets
+scp file.txt user@ip:/Desktop/
+
+# Navigation
+cd /Users/rohansharma/Desktop/Projects/Intern
