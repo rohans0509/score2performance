@@ -76,6 +76,66 @@ def tok_mapping(token):
 
 
 
+class PianoRollMidiToken(NamedTuple):
+    '''
+    Used to store a MIDI event.
+    Valid (type, value) pairs are as follows:
+    NOTE_ON: [0,127]
+    NOTE_OFF: [0,127]
+    TIME_SHIFT: [10,1000] (goes by 10s)
+    SET_VELOCITY: [0,124] (goes by 4s)
+    START: [0]
+    STOP: [0]
+    MASK: [0]
+    PADDING: [0]
+    '''
+    type: str
+    value: int
+
+def key_mapping(event):
+    '''
+    Given a MIDI event, return a unique index.
+    '''
+    if event.type == "NOTE_ON":
+        return list(range(0,128))[event.value]
+    if event.type == "NOTE_OFF":
+        return list(range(128,256))[event.value]
+    if event.type == "TIME_SHIFT":
+        return list(range(256,356))[int(event.value // 10) - 1]
+    if event.type == "SET_VELOCITY":
+        return list(range(356,388))[int(event.value // 4)]
+    if event.type == "START":
+        return 388
+    if event.type == "STOP":
+        return 389
+    if event.type == "MASK":
+        return MASK_IDX
+    if event.type == "PADDING":
+        return PAD_IDX
+
+def tok_mapping(token):
+    '''
+    Given a MIDI token index, return the associated MIDI event.
+    '''
+    if torch.is_tensor(token):
+        token = token.item()
+    if token >=0 and token < 128:
+        return MidiToken("NOTE_ON", token)
+    if token >= 128 and token < 256:
+        return MidiToken("NOTE_OFF", token-128)
+    if token >= 256 and token < 356:
+        return MidiToken("TIME_SHIFT", ((token-256) * 10) + 10)
+    if token >= 356 and token < 388:
+        return MidiToken("SET_VELOCITY", (token-356) * 4)
+    if token == 388:
+        return MidiToken("START", 0)
+    if token == 389:
+        return MidiToken("STOP", 0)
+    if token == MASK_IDX:
+        return MidiToken("MASK", 0)
+    if token == PAD_IDX:
+        return MidiToken("PADDING", 0)
+
 
 class MidiPerformanceDataset(Dataset):
     '''
@@ -90,7 +150,7 @@ class MidiPerformanceDataset(Dataset):
         390 = MASK
         391 = PADDING
     '''
-    def __init__(self, data_file, seq_len=512, mask_probs=[0.12, 0.015, 0.015]):
+    def __init__(self, data_file, seq_len=512, mask_probs=[0.12, 0.015, 0.015],type="score2perf"):
         self.seq_len = seq_len
         self.mask_probs = mask_probs
 
@@ -160,7 +220,7 @@ class MidiPerformanceDataset(Dataset):
         return(end_beat-1)
             
 
-    def get_batch(self, batch_size,show=False): 
+    def get_batch(self, batch_size,show=False,type="score2perf"): 
         # chooses what songs we're going to use in this batch
         song_indices = torch.multinomial(torch.ones(self.num_songs), batch_size)
 
@@ -205,9 +265,6 @@ class MidiPerformanceDataset(Dataset):
             diff=self.compare(score_section,performance_section)
             differences.append(diff)
             
-            
-
-            
             # Convert tokens to integers using key_mapping
             score_section=[key_mapping(tok) for tok in score_section]
             performance_section=[key_mapping(tok) for tok in performance_section]
@@ -224,11 +281,18 @@ class MidiPerformanceDataset(Dataset):
         # Difference tensor of shape (batch_size,1)
         difference_tensor = torch.tensor(differences)
 
-        # Construct Input
-        inp = score_tensor
-        
-        # Construct Output
-        tgt = performance_tensor
+        if type=="score2perf":
+            # Construct Input
+            inp = score_tensor
+            
+            # Construct Output
+            tgt = performance_tensor
+        elif type=="perf2score":
+            # Construct Input
+            inp = performance_tensor
+            
+            # Construct Output
+            tgt = score_tensor
 
         # assert that shape of inp and tgt are (batch_size, seq_len)
         assert inp.shape == (batch_size, self.seq_len)

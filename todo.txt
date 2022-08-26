@@ -1,0 +1,27 @@
+1. Incorporate different types of tokenization. Generate corresponding data
+2. Transfer this data
+3. Incorporate different types of I/O (score2perf or perf2score)
+4. Incorporate different types of samplings
+5. Could also have different Channel numbers as input
+
+
+Tokenization
+
+Types
+-> PerformanceRNN- PerformanceRNN tokenization
+-> Piano-Roll -Piano Roll tokenization
+Here you could have a token for ghost note (small length, Datasets/asap-dataset/Bach/Prelude/bwv_856/midi_score.mid)
+Find the nearest number to the numerator such that denominator reduces
+
+September end NeurIPS workshop
+
+
+1/24
+
+Testing pipeline 
+Score2perf Training 
+Score2melody-Check open source/ Filtering out notes with velocity
+While training make a new branch and finish tokenization
+Update config to indicate the tokenization
+Update model on the basis of this tokenization
+Train the model

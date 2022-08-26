@@ -42,7 +42,30 @@ def dat2mid_anna(seq, fname="test.mid"):
 
 
 
-def mid2dat_anna(midi_path):
+def mid2dat_anna(midi_path,type="PerformanceRNN",min_beat=24):
+   
+    if type=="PerformanceRNN":
+        return performanceRNN(midi_path)
+    else:
+        return pianoRoll(midi_path,min_beat)
+
+def pianoRoll(midi_path,min_beat):
+    '''
+    Given a MIDI file, convert into a piano roll.
+
+        Parameters:
+            midi_path (str/Path): Input MIDI filename
+        
+        Returns:
+            arr (np.array): Piano roll array
+    '''
+    if not isinstance(midi_path, str):
+        midi_path = midi_path.as_posix()
+    midi_data = pm.PrettyMIDI(midi_path)
+    x = midi_data.get_piano_roll(fs=100) # shape=(pitch, timestep)
+    return x
+
+def performanceRNN(midi_path):
     '''
     Given a MIDI file, convert into a sequence of MIDI events.
 
@@ -92,9 +115,8 @@ def mid2dat_anna(midi_path):
         arr.append(MidiToken("TIME_SHIFT", time_acc))
         for p in active_notes:
             if p != -1:
-                arr.append(MidiToken("NOTE_OFF", p)) 
+                arr.append(MidiToken("NOTE_OFF", p))
     return arr
-
 
 # This script generates the MAESTRO pickle file.
 if __name__ == "__main__":

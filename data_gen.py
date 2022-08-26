@@ -4,6 +4,7 @@ import pandas as pd
 import pickle
 from tqdm import tqdm
 
+
 def beat2TokenPosition(beat, beats, tokens,time_shift_positions=[]):
     beat_time=beats[beat]
 
@@ -24,7 +25,7 @@ def getTimeShifts(tokens):
             time_shift_positions.append((i, time_elapsed))
     return time_shift_positions
 
-def splitTokens(tokens,beats):
+def splitTokens(tokens,beats,type="normal"):
     split_tokens=[]
     
     time_shift_positions=getTimeShifts(tokens)
@@ -61,7 +62,7 @@ def getBeats(annotations,filename,type="performance"):
     beats = [float(x) for x in beats]
     return beats
  
-def genData(pairs,score_dict,perf_dict,annotations):
+def genData(pairs,score_dict,perf_dict,annotations,type="normal"):
     # iterate over train pairs and generate data
     data = {}
     for i in tqdm(range(len(pairs))):
@@ -78,8 +79,8 @@ def genData(pairs,score_dict,perf_dict,annotations):
         performance_beats = getBeats(annotations,performance_filename,"performance")
 
         # split tokens
-        score_split = splitTokens(performance_tokens, performance_beats)
-        performance_split=splitTokens(score_tokens, score_beats)
+        score_split = splitTokens(score_tokens, score_beats,type)
+        performance_split=splitTokens(performance_tokens, performance_beats,type)
 
         # should be the same number of splits
         assert len(score_split)==len(performance_split) 
