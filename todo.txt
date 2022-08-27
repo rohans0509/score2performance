@@ -20,7 +20,7 @@ September end NeurIPS workshop
 
 Testing pipeline 
 Score2perf Training 
-Score2melody-Check open source/ Filtering out notes with velocity
+Score2melody-Check open source/ Filtering out notes with velocity 
 While training make a new branch and finish tokenization
 Update config to indicate the tokenization
 Update model on the basis of this tokenization
