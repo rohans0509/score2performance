@@ -5,8 +5,8 @@
 #SBATCH -c 8
 #SBATCH --qos=high
 #SBATCH --mem=64G
-#SBATCH --job-name=expt
-#SBATCH --output=out.log
+#SBATCH --job-name=p2s
+#SBATCH --output=p2s_out.log
 #SBATCH --ntasks=1
 
 source ~/sourcefile
