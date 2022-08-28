@@ -1,4 +1,3 @@
-from cgi import test
 import random
 random.seed(420)
 import pandas as pd
@@ -157,17 +156,26 @@ if __name__=="__main__":
     train_split=0.8
     store_dir="Store/asap-dataset"
 
-    # Check if store_dir exists
-    if not os.path.exists(store_dir):
-        os.makedirs(store_dir)
-
     # read annotations
     print("Reading annotations..")
     annotations=read_annotations(f"{dataset_dir}/asap_annotations.json")
-    
-    saveTokens(annotations,type="performance",method="normal",store_folder=store_dir)
-    saveTokens(annotations,type="score",method="normal",store_folder=store_dir)
-    
+
+    # Check if store_dir exists
+    if not os.path.exists(store_dir):
+        os.makedirs(store_dir)
+    # Check if tokens exist 
+    if not os.path.exists(f'{store_dir}/score_dict_normal.pickle'):
+        print("Tokenising scores..")
+
+        # tokenise scores
+        saveTokens(annotations,type="score",method="normal",store_folder=store_dir)
+        
+        print("Tokenising performances..")
+        # tokenise performances
+        saveTokens(annotations,type="performance",method="normal",store_folder=store_dir)
+
+    else:
+        print("Tokens already exist")
 
     s2p_map=score2PerfFileMap(annotations)
     

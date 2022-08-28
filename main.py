@@ -141,6 +141,7 @@ class Trainer:
 
         print("Num trainable parameters:", sum(p.numel() for p in model.parameters() if p.requires_grad), flush=True)
         
+
         # Training pass
         while True:
             model.train()
@@ -150,7 +151,7 @@ class Trainer:
             pad_mask = (tgt == PAD_IDX).to(self.device)
             inp = batch["inp"].to(self.device)
             optimizer.zero_grad()
-            out = model(inp)
+            out = model(inp,tgt)
             if config.type == "encoder":
                 pass
             elif config.type == "autoencoder":
@@ -174,7 +175,7 @@ class Trainer:
                         
                         pad_mask = (tgt == PAD_IDX).to(self.device)
                         inp = vbatch["inp"].to(self.device)
-                        out = model(inp)
+                        out = model(inp,tgt)
                         if config.type == "encoder":
                             pass
                         elif config.type == "autoencoder":

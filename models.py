@@ -54,15 +54,17 @@ class Decoder(nn.Module):
         self.dec         = nn.TransformerDecoder(dec_layer, config.transformer.layers, norm=nn.LayerNorm(config.transformer.embed_dim))
         self.fc          = nn.Linear(config.transformer.embed_dim, config.transformer.num_tokens)
 
-    def forward(self, inp, dec_out=None):
-        if dec_out is not None:
+    def forward(self, inp, dec_out=None,repr=None,shift=True):
+        if shift:
             dec_in  = torch.cat([torch.ones_like(dec_out[:,0:1])*MASK_IDX, dec_out[:,:-1]], dim=1)
         
-        
+        else:
+            dec_in=dec_out
         enc_pad=(inp == PAD_IDX).to(inp).bool()
         dec_pad=(dec_in == PAD_IDX).to(inp).bool()
-
-        repr = self.encoder(inp, repr=True, pad_mask=enc_pad)
+        
+        if repr is None:
+            repr = self.encoder(inp, repr=True, pad_mask=enc_pad)
 
         dec_out = self.embed(dec_in) * math.sqrt(self.embed_dim)
         # (batch_sz, seq_len, embed_dim)
