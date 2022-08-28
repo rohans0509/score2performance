@@ -7,6 +7,7 @@ from tqdm import tqdm
 from utils import score2PerfFileMap
 from IPython.display import display
 import matplotlib.pyplot as plt
+import os
 def beat2TokenPosition(beat, beats, tokens,time_shift_positions=[]):
     beat_time=beats[beat]
 
@@ -106,17 +107,67 @@ def splitPairs(s2p_map,train_split):
 
 
 
+from tqdm import tqdm
+from midi_processing import mid2dat_anna
+import pickle
 
+# tokenise performances
+def tokenise_performances(annotations,dataset_dir="Datasets/asap-dataset",method="normal"):
+    token_dict={}
+    for index in tqdm(annotations.index):
+        row=annotations.loc[index]
+        # get performance filename
+        performance_filename = row['performance_filename']
+        # get performance file
+        performance_file = f"{dataset_dir}/{performance_filename}"
+        # tokenise performance
+        token_dict[performance_filename] = mid2dat_anna(performance_file)
+    return token_dict
 
+# tokenise scores
+def tokenise_scores(annotations,dataset_dir="Datasets/asap-dataset",method="normal",min_beat=24):
+    token_dict={}
+    # get unique score filenames
+    score_filenames = annotations['score_filename'].unique()
+    for score_filename in tqdm(score_filenames):
+        # get score filename
+        score_filename = score_filename
+        # get score file
+        score_file = f"{dataset_dir}/{score_filename}"
+        # tokenise score
+        token_dict[score_filename] = mid2dat_anna(score_file)
+    return token_dict
+
+def tokenise(annotations,type="performance",dataset_dir="Datasets/asap-dataset",method="normal"):
+    if type=="performance":
+        return tokenise_performances(annotations,dataset_dir=dataset_dir,method=method)
+    elif type=="score":
+        return tokenise_scores(annotations,dataset_dir=dataset_dir,method=method)
+    else:
+        return None
+
+def saveTokens(annotations,type="performance",method="normal",store_folder="Store/asap-dataset"):
+    # tokenise and save pickle of scores
+    token_dict = tokenise(annotations,type=type)
+    with open(f'{store_folder}/{type}_dict_{method}.pickle', 'wb') as handle:
+        pickle.dump(token_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)   
 
 if __name__=="__main__":
     dataset_dir = "Datasets/asap-dataset"
     train_split=0.8
     store_dir="Store/asap-dataset"
 
+    # Check if store_dir exists
+    if not os.path.exists(store_dir):
+        os.makedirs(store_dir)
+
     # read annotations
     print("Reading annotations..")
     annotations=read_annotations(f"{dataset_dir}/asap_annotations.json")
+    
+    saveTokens(annotations,type="performance",method="normal",store_folder=store_dir)
+    saveTokens(annotations,type="score",method="normal",store_folder=store_dir)
+    
 
     s2p_map=score2PerfFileMap(annotations)
     
