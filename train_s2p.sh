@@ -13,4 +13,4 @@ source ~/sourcefile
 source ~/score2perfenv/bin/activate
 date;hostname;pwd;whoami
 
-python main.py --mode=train --config.dataset.path="Store/asap-dataset" --config.dataset.mode="score2perf" --workdir=autoenc_end2end --config=configs.py:autoencoder --config.pt_enc_path=None
+python main.py --mode=train --workdir=autoenc_end2end --config=configs.py:autoencoder --config.pt_enc_path=None --config.dataset.path="Store/asap-dataset" --config.dataset.mode="score2perf" 
