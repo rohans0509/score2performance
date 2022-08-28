@@ -1,5 +1,6 @@
 import random
 import pickle
+from re import L
 from typing import NamedTuple
 import torch
 from torch.utils.data import Dataset
@@ -150,11 +151,12 @@ class MidiPerformanceDataset(Dataset):
         390 = MASK
         391 = PADDING
     '''
-    def __init__(self, data_file, seq_len=512, mask_probs=[0.12, 0.015, 0.015],type="score2perf"):
+    def __init__(self, data_file, seq_len=512, mask_probs=[0.12, 0.015, 0.015],mode="score2perf"):
         self.seq_len = seq_len
         self.mask_probs = mask_probs
 
         self.data_file=data_file
+        self.mode=mode
 
 
         # # read pickle data_file 
@@ -220,7 +222,7 @@ class MidiPerformanceDataset(Dataset):
         return(end_beat-1)
             
 
-    def get_batch(self, batch_size,show=False,type="score2perf"): 
+    def get_batch(self, batch_size,show=False): 
         # chooses what songs we're going to use in this batch
         song_indices = torch.multinomial(torch.ones(self.num_songs), batch_size)
 
@@ -281,18 +283,20 @@ class MidiPerformanceDataset(Dataset):
         # Difference tensor of shape (batch_size,1)
         difference_tensor = torch.tensor(differences)
 
-        if type=="score2perf":
+        if self.mode=="score2perf":
             # Construct Input
             inp = score_tensor
             
             # Construct Output
             tgt = performance_tensor
-        elif type=="perf2score":
+        elif self.mode=="perf2score":
             # Construct Input
             inp = performance_tensor
             
             # Construct Output
             tgt = score_tensor
+        else:
+            raise ValueError("Mode must be either score2perf or perf2score")
 
         # assert that shape of inp and tgt are (batch_size, seq_len)
         assert inp.shape == (batch_size, self.seq_len)

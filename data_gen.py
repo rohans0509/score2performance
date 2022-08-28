@@ -1,10 +1,12 @@
+from cgi import test
 import random
 random.seed(420)
 import pandas as pd
 import pickle
 from tqdm import tqdm
-
-
+from utils import score2PerfFileMap
+from IPython.display import display
+import matplotlib.pyplot as plt
 def beat2TokenPosition(beat, beats, tokens,time_shift_positions=[]):
     beat_time=beats[beat]
 
@@ -89,6 +91,24 @@ def genData(pairs,score_dict,perf_dict,annotations,type="normal"):
         data[performance_filename] = (score_split, performance_split)
     return data
 
+def splitPairs(s2p_map,train_split):
+    train_pairs=[]
+    test_pairs=[]
+
+    for score_filename in s2p_map.keys():
+        for performance_filename in s2p_map[score_filename]:
+            # put train_split% in train and rest in test
+            if random.random()<train_split:
+                train_pairs.append((score_filename,performance_filename))
+            else:
+                test_pairs.append((score_filename,performance_filename))
+    return train_pairs,test_pairs
+
+
+
+
+
+
 if __name__=="__main__":
     dataset_dir = "Datasets/asap-dataset"
     train_split=0.8
@@ -98,22 +118,19 @@ if __name__=="__main__":
     print("Reading annotations..")
     annotations=read_annotations(f"{dataset_dir}/asap_annotations.json")
 
-    # find all pairs of score, performance
-    score_performance_pairs = []
-    for i in range(len(annotations)):
-        score_performance_pairs.append((annotations.iloc[i]['score_filename'], annotations.iloc[i]['performance_filename']))
-
+    s2p_map=score2PerfFileMap(annotations)
+    
     # split into train and test after shuffling
     print(f"Splitting pairs with {train_split*100}/{(1-train_split)*100} split")
-    random.shuffle(score_performance_pairs)
-    train_pairs = score_performance_pairs[:int(len(score_performance_pairs)*train_split)]
-    test_pairs = score_performance_pairs[int(len(score_performance_pairs)*train_split):]
+    
+    train_pairs,test_pairs=splitPairs(s2p_map,train_split)
+
 
     # read in tokens
     print("Reading tokens..")
-    with open(f'{store_dir}/perf_dict.pickle', 'rb') as handle:
+    with open(f'{store_dir}/perf_dict_normal.pickle', 'rb') as handle:
         perf_dict = pickle.load(handle)
-    with open(f'{store_dir}/score_dict.pickle', 'rb') as handle:
+    with open(f'{store_dir}/score_dict_normal.pickle', 'rb') as handle:
         score_dict = pickle.load(handle)
 
     # save train data

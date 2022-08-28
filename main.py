@@ -124,9 +124,11 @@ class Trainer:
         config = self.config 
 
         print(f"Training {config.type}")
+        dataset_path=config.dataset.path
+        mode=config.dataset.mode
 
-        train_data = MidiPerformanceDataset("train_data.pickle", seq_len=config.transformer.seq_len)
-        valid_data = MidiPerformanceDataset("test_data.pickle", seq_len=config.transformer.seq_len)
+        train_data = MidiPerformanceDataset(f"{dataset_path}/train_data.pickle", seq_len=config.transformer.seq_len, mode=mode)
+        valid_data = MidiPerformanceDataset(f"{dataset_path}/test_data.pickle", seq_len=config.transformer.seq_len, mode=mode)
         
         model = self.model 
         optimizer = self.optimizer

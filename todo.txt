@@ -18,10 +18,21 @@ September end NeurIPS workshop
 
 1/24
 
+Create colab notebook and send a zip of sample data
 Testing pipeline 
 Score2perf Training 
-Score2melody-Check open source/ Filtering out notes with velocity 
+Score2melody-Check open source/ Filtering out notes with velocity (try long subsequence)
 While training make a new branch and finish tokenization
 Update config to indicate the tokenization
 Update model on the basis of this tokenization
 Train the model
+
+
+Training Model : launch train.sh
+sbatch train_s2p.sh
+Change log file
+Beam search
+Update models.py from jupyter
+
+score2perf directory etc.
+

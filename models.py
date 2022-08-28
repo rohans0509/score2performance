@@ -39,8 +39,6 @@ class BidirectionalEncoder(nn.Module):
         enc_out = self.fc(enc_out)
         return enc_out
 
-
-
 class Decoder(nn.Module):
     def __init__(self, config, encoder):
         super().__init__()

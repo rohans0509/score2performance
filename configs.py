@@ -23,6 +23,10 @@ def backbone_config():
     transformer.seq_len = 512
     transformer.dropout = 0.1
 
+    config.dataset= dataset = ml_collections.ConfigDict()
+    dataset.path="Store/asap-dataset"
+    dataset.mode="score2perf"
+
     return config 
 
 def autoencoder_config():
