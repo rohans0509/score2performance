@@ -1,7 +1,7 @@
 import pandas as pd
 from IPython.display import display
 import miditoolkit as mtk
-
+import os
 def read_annotations(path,process=True,only_aligned=True):
     """
     Reads the annotations from the given path.
@@ -35,16 +35,14 @@ def read_mid(filename):
     return(midi_obj)
 
 def getNotes(midi_obj,instrument=-1):
-    if type(midi_obj)==str:
-        midi_obj=read_mid(midi_obj)
     if instrument==-1:
         notes=[]
         for instrument in midi_obj.instruments:
             notes.extend(instrument.notes)
         notes=sorted(notes,key=lambda x:x.start)
+        return notes
     else:
-        notes=midi_obj.instruments[instrument].notes
-    return notes
+        return midi_obj.instruments[instrument].notes
 
 def getBeats(filename,annotations,type="score"):
     if type=="score":
@@ -57,6 +55,8 @@ def getBeats(filename,annotations,type="score"):
     return beats
 
 def save_mid(midi_obj,filename):
+    # create folders if they do not exist
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     midi_obj.dump(filename)
 
 def score2PerfFileMap(annotations):
@@ -71,8 +71,3 @@ def score2PerfFileMap(annotations):
     score2perf_dict=score2perf_df.set_index('score_filename')['performance_filenames'].to_dict()
     return score2perf_dict
     
-def noteInNotes(note,notes):
-    for n in notes:
-        if n.pitch==note.pitch and n.start==note.start and n.end==note.end:
-            return True
-    return False

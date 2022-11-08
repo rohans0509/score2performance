@@ -19,8 +19,8 @@ September end NeurIPS workshop
 1/24
 
 Create colab notebook and send a zip of sample data
-Testing pipeline 
-Score2perf Training 
+Testing pipeline DONE
+Score2perf Training DONE
 Score2melody-Check open source/ Filtering out notes with velocity (try long subsequence)
 While training make a new branch and finish tokenization
 Update config to indicate the tokenization
@@ -36,3 +36,16 @@ Update models.py from jupyter
 
 score2perf directory etc.
 
+Continous threshold change vs sharp jump
+
+# Split notes based on minimum length note
+
+Generate dataset with thresholding
+
+Give accompaniment, model should generate melody notes
+
+# Generate train,test data
+# Check config
+# Run Model
+
+# Check notes

@@ -4,7 +4,7 @@ import pandas as pd
 import pretty_midi as pm
 from pathlib import Path
 from datasets import MidiToken
-
+from utils import noteInNotes
 def dat2mid_anna(seq, fname="test.mid"):
     '''
     Given a sequence of MIDI events, write a MIDI file.
@@ -16,6 +16,8 @@ def dat2mid_anna(seq, fname="test.mid"):
         Returns:
             None
     '''
+    # deep copy
+    seq = [MidiToken(x.type, x.value) for x in seq]
     assert seq is not None
     assert isinstance(seq[0], MidiToken)
     curr_notes = [-1] * 128 # -1=inactive, else val=start_time
@@ -42,13 +44,16 @@ def dat2mid_anna(seq, fname="test.mid"):
 
 
 
-def mid2dat_anna(midi_path,type="PerformanceRNN",min_beat=24):
-   
+def mid2dat_anna(midi_path,type="PerformanceRNN",min_beat=24,melody_notes=None):
+    if melody_notes is not None:
+        type="Melody"   
     if type=="PerformanceRNN":
         return performanceRNN(midi_path)
+    elif type=="Melody":
+        return melodyRep(midi_path)
     else:
         return pianoRoll(midi_path,min_beat)
-
+    
 def pianoRoll(midi_path,min_beat):
     '''
     Given a MIDI file, convert into a piano roll.
@@ -118,42 +123,79 @@ def performanceRNN(midi_path):
                 arr.append(MidiToken("NOTE_OFF", p))
     return arr
 
-# This script generates the MAESTRO pickle file.
-if __name__ == "__main__":
+# check pretty midi piano roll for instrument 1
+def melodyRep(midi_path):
+    '''
+    Given a MIDI file, convert into a sequence of MIDI events. If note is in melody_notes have a NOTE_ON_MELODY/NOTE_OFF_MELODY token
 
-    dataset_dir = "..\maestro"
+        Parameters:
+            midi_path (str/Path): Input MIDI filename
+        
+        Returns:
+            arr (list): List of MidiToken event objects
+    '''
+    arr = []
+    if not isinstance(midi_path, str):
+        midi_path = midi_path.as_posix()
+    midi_data = pm.PrettyMIDI(midi_path)
+    timestep=100
+    x = midi_data.get_piano_roll(fs=timestep) # shape=(pitch, length/timestep)
+    melody_pr=midi_data.instruments[0].get_piano_roll(fs=timestep)
 
-    df = pd.read_csv(os.path.join(dataset_dir, 'maestro-v2.0.0.csv'))
-    train_songs = df.loc[df['split'] == 'train', 'midi_filename']
-    valid_songs = df.loc[df['split'] == 'validation', 'midi_filename']
-    test_songs = df.loc[df['split'] == 'test', 'midi_filename']
+    # set non-zero velocities to 80
+    x[x>0]=80
+    melody_pr[melody_pr>0]=80
+
+    assert melody_pr.shape==x.shape
     
-    train_output = []
-    for i,s in enumerate(train_songs):
-        print("Train: %4d - %s" % (i+1, s))
-        entry = {}
-        entry['data'] = mid2dat_anna(os.path.join(dataset_dir, s[5:]))
-        entry['meta'] = df.loc[df['midi_filename'] == s].iloc[0].to_dict()
-        train_output.append(entry)
-    with open("maestro_train.pickle", 'wb') as f:
-        pickle.dump(train_output, f, protocol=4)
+    active_notes = [] # unended NOTE_ON pitches
+    time_acc = -10 # track time passed (ms) since last TIME_SHIFT (start at -10 to offset first increment)
+    curr_vel = 0 # last SET_VELOCITY value 
 
-    valid_output = []
-    for i,s in enumerate(valid_songs):
-        print("Validation: %4d - %s" % (i+1, s))
-        entry = {}
-        entry['data'] = mid2dat_anna(os.path.join(dataset_dir, s[5:]))
-        entry['meta'] = df.loc[df['midi_filename'] == s].iloc[0].to_dict()
-        valid_output.append(entry)
-    with open("maestro_valid.pickle", 'wb') as f:
-        pickle.dump(valid_output, f, protocol=4)
-    
-    test_output = []
-    for i,s in enumerate(test_songs):
-        print("Test: %4d - %s" % (i+1, s))
-        entry = {}
-        entry['data'] = mid2dat_anna(os.path.join(dataset_dir, s[5:]))
-        entry['meta'] = df.loc[df['midi_filename'] == s].iloc[0].to_dict()
-        test_output.append(entry)
-    with open("maestro_test.pickle", 'wb') as f:
-        pickle.dump(test_output, f, protocol=4)
+    num_melody=0
+    num_other=0
+    # Iterate over timesteps
+    for t in range(x.shape[1]):
+        time_acc += 10
+        for p in range(x.shape[0]):
+            # When a note starts
+            if x[p,t] and p not in active_notes:
+                active_notes.append(p)
+                if time_acc:
+                    arr.append(MidiToken("TIME_SHIFT", time_acc))
+                    time_acc = 0
+                if (x[p,t]//4)*4 != curr_vel:
+                    curr_vel = (x[p,t]//4)*4
+                    arr.append(MidiToken("SET_VELOCITY", curr_vel))
+                if melody_pr[p,t]:
+                    arr.append(MidiToken("NOTE_ON_MELODY", p))
+                    num_melody+=1
+                else:
+                    arr.append(MidiToken("NOTE_ON", p))
+                    num_other+=1
+            # When a note ends
+            elif not x[p,t] and p in active_notes:
+                if time_acc:
+                    arr.append(MidiToken("TIME_SHIFT", time_acc))
+                    time_acc = 0
+                active_notes.remove(p)
+                if melody_pr[p,t]:
+                    arr.append(MidiToken("NOTE_OFF_MELODY", p))
+                else:
+                    arr.append(MidiToken("NOTE_OFF", p))
+        if time_acc == 1000:
+            arr.append(MidiToken("TIME_SHIFT", 1000))
+            time_acc = 0
+    # Write final NOTE_OFFs and NOTE_OFF_MELODYs
+    if active_notes:
+        time_acc += 10
+        arr.append(MidiToken("TIME_SHIFT", time_acc))
+        for p in active_notes:
+            if p != -1:
+                if melody_pr[p,t]:
+                    arr.append(MidiToken("NOTE_OFF_MELODY", p))
+                else:
+                    arr.append(MidiToken("NOTE_OFF", p))
+    print(num_melody)
+    print(num_other+num_melody)
+    return arr

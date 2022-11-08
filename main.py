@@ -1,6 +1,6 @@
 """
 
-python main.py --mode=train --workdir=autoenc_end2end --config=configs.py:autoencoder --config.bottleneck.pooling_args.num_moments=2 --config.pt_enc_path=None
+python main.py --mode=train --workdir=autoenc_end2end --config=configs.py:encoder
 
 
 """
@@ -127,8 +127,8 @@ class Trainer:
         dataset_path=config.dataset.path
         mode=config.dataset.mode
 
-        train_data = MidiPerformanceDataset(f"{dataset_path}/train_data.pickle", seq_len=config.transformer.seq_len, mode=mode)
-        valid_data = MidiPerformanceDataset(f"{dataset_path}/test_data.pickle", seq_len=config.transformer.seq_len, mode=mode)
+        train_data = MidiMelodyDataset(f"{dataset_path}/train_data.pickle", seq_len=config.transformer.seq_len)
+        valid_data = MidiMelodyDataset(f"{dataset_path}/test_data.pickle", seq_len=config.transformer.seq_len)
         
         model = self.model 
         optimizer = self.optimizer
@@ -141,7 +141,6 @@ class Trainer:
 
         print("Num trainable parameters:", sum(p.numel() for p in model.parameters() if p.requires_grad), flush=True)
         
-
         # Training pass
         while True:
             model.train()
@@ -151,10 +150,16 @@ class Trainer:
             pad_mask = (tgt == PAD_IDX).to(self.device)
             inp = batch["inp"].to(self.device)
             optimizer.zero_grad()
-            out = model(inp,tgt)
+            
             if config.type == "encoder":
-                pass
+                out=model(inp)
+                out_mask=tgt==-1
+                # convert to self.device
+                out_mask=out_mask.to(self.device)
+                loss=criterion(out[~out_mask],tgt[~out_mask])
+                
             elif config.type == "autoencoder":
+                out = model(inp,tgt)
                 loss = criterion(out[~pad_mask], tgt[~pad_mask])
             loss.backward()
             for p in model.parameters():

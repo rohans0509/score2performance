@@ -7,6 +7,7 @@ from utils import score2PerfFileMap
 from IPython.display import display
 import matplotlib.pyplot as plt
 import os
+
 def beat2TokenPosition(beat, beats, tokens,time_shift_positions=[]):
     beat_time=beats[beat]
 

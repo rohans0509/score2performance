@@ -1,0 +1,5 @@
+<Shift 4><Shift 3>=<Shift 12>
+Rep keeps track of shift wrt last note
+Feed in all possible tokenisations for the sequence
+
+For now test the model/ Figure out issue with note dropping

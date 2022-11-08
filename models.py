@@ -18,7 +18,7 @@ class BidirectionalEncoder(nn.Module):
         self.pos_encoder = PositionalEncoding(config.transformer.embed_dim, config.transformer.dropout, max_len=config.transformer.seq_len)
         enc_layer        = nn.TransformerEncoderLayer(config.transformer.embed_dim, config.transformer.nhead, config.transformer.feedforward, config.transformer.dropout, batch_first=True, activation="gelu")
         self.enc         = nn.TransformerEncoder(enc_layer, config.transformer.layers, norm=nn.LayerNorm(config.transformer.embed_dim))
-        self.fc          = nn.Linear(config.transformer.embed_dim, config.transformer.num_tokens)
+        self.fc          = nn.Linear(config.transformer.embed_dim, 2)
 
     def forward(self, inp, repr=False, pad_mask=None):
         # (batch_sz, seq_len)

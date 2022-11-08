@@ -2,19 +2,22 @@
 srun -c 4 --gres=gpu:1 --mem=32GB --qos=nopreemption -p interactive --pty bash
 
 # Python activate
-source sourcefile
-source score2perfenv/bin/activate
+source ~/sourcefile
+source ~/score2perfenv/bin/activate
 
 # Transfer files
 #Dataset
-scp -r score2performance/Datasets rohan@v.vectorinstitute.ai:/h/rohan/score2performance/Datasets
+scp -r report_card.ipynb rohan@v.vectorinstitute.ai:/h/rohan/score2performanceNew/score2performance/report_card.ipynb
 scp file.txt user@ip:/Desktop/
 
 # Navigation
 cd /Users/rohansharma/Desktop/Projects/Intern
+cd ~/score2performanceNew/score2performance
 
 # Jupyter
 python -m jupyter notebook --ip 0.0.0.0 --no-browser
+ssh -L 8888:gpu052:8888 rohan@v.vectorinstitute.ai
+lsof -n -i4TCP:8888 | grep LISTEN
 
 # Squeue
 squeue -u rohan
